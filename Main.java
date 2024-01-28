@@ -8,10 +8,16 @@ public class Main {
 
     public static void main(String[] args) {
         Sender s = new Sender(1);
-        Sender s2 = new Sender(1);
-        Reciever r = new Reciever();
+        Sender s2 = new Sender(2);
+        Reciever r = new Reciever(1);
+        Reciever r1 = new Reciever(2);
+        Reciever r2 = new Reciever(3);
+        Reciever r3 = new Reciever(4);
         s.start();
         r.start();
+        r1.start();
+        r2.start();
+        r3.start();
         s2.start();
     }
 
@@ -28,7 +34,7 @@ public class Main {
             while (true) {
                 try {
                     mutex.acquire();
-                    SR.send_msg("msg" + c);
+                    SR.send_msg("msg" + c + " S" + number);
                     c++;
                     mutex.release();
                     Thread.sleep(100);
@@ -43,13 +49,24 @@ public class Main {
 
     static class Reciever extends Thread {
         String msg;
+        int number;
+
+        public Reciever(int number) {
+            this.number = number;
+        }
 
         @Override
         public void run() {
             while (true) {
 
-                msg = SR.get_msg();
-                System.out.println(msg);
+                msg = SR.get_msgnb();
+                System.out.println(msg + " R" + number);
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
 
             }
         }

@@ -20,6 +20,14 @@ public class BufferQueuee {
     }
 
     public void send_msg(String msg) {
+        if (!isLimit && count == bufferSize) {
+            String temp[] = new String[bufferSize + 50];
+            for (int i = 0; i < bufferSize; i++) {
+                temp[i] = buffer[i];
+            }
+            bufferSize = bufferSize + 50;
+            buffer = temp;
+        }
         try {
             empty.acquire();
             mutex.acquire();
@@ -33,6 +41,7 @@ public class BufferQueuee {
     }
 
     public String get_msg() {
+
         String msg = null;
         try {
             full.acquire();
@@ -50,13 +59,17 @@ public class BufferQueuee {
     }
 
     public String get_msgnb() {
-        String msg;
-        msg = buffer[out];
+        String msg = null;
+        if (count == 0)
+            return null;
         try {
+            // full.acquire();
             mutex.acquire();
+            msg = buffer[out];
             out = (out + 1) % bufferSize;
             count--;
             mutex.release();
+            empty.release();
         } catch (InterruptedException e) {
 
         }
