@@ -7,60 +7,51 @@ public class BufferQueuee {
     private int out = 0;
     private int count = 0;
     private boolean isLimit = true;
-    private static Semaphore mutex = new Semaphore(1);
+    private Semaphore mutex = new Semaphore(1);
+    private Semaphore full = new Semaphore(0);
+    private Semaphore empty;
 
     public BufferQueuee(int initSize, boolean isLimit) {
         bufferSize = initSize;
         buffer = new String[initSize];
         this.isLimit = isLimit;
+        empty = new Semaphore(10);
 
     }
 
     public void send_msg(String msg) {
-        if (!isLimit) {
-            String temp[] = new String[bufferSize + 10];
-            for (int i = 0; i < bufferSize; i++) {
-                temp[i] = buffer[i];
-            }
-            try {
-                mutex.acquire();
-                bufferSize = bufferSize + 10;
-                buffer = temp;
-                mutex.release();
-            } catch (InterruptedException e) {
-            }
-
-        }
-        while (count == bufferSize)
-            ;
-        buffer[in] = msg;
         try {
+            empty.acquire();
             mutex.acquire();
+            buffer[in] = msg;
             in = (in + 1) % bufferSize;
             count++;
             mutex.release();
+            full.release();
         } catch (InterruptedException e) {
         }
     }
 
     public String get_msg() {
-        while (count == 0)
-            ;
-        String msg = buffer[out];
+        String msg = null;
         try {
+            full.acquire();
             mutex.acquire();
+            msg = buffer[out];
             out = (out + 1) % bufferSize;
             count--;
             mutex.release();
+            empty.release();
         } catch (InterruptedException e) {
 
         }
-
         return msg;
+
     }
 
     public String get_msgnb() {
-        String msg = buffer[out];
+        String msg;
+        msg = buffer[out];
         try {
             mutex.acquire();
             out = (out + 1) % bufferSize;
@@ -69,7 +60,6 @@ public class BufferQueuee {
         } catch (InterruptedException e) {
 
         }
-
         return msg;
     }
 
