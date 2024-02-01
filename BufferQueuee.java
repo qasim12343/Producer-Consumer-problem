@@ -15,19 +15,29 @@ public class BufferQueuee {
         bufferSize = initSize;
         buffer = new String[initSize];
         this.isLimit = isLimit;
-        empty = new Semaphore(10);
+        empty = new Semaphore(initSize);
 
     }
 
     public void send_msg(String msg) {
         if (!isLimit && count == bufferSize) {
-            String temp[] = new String[bufferSize + 50];
+            try {
+                empty.acquire();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            int newSize = bufferSize / 2 + bufferSize;
+            String temp[] = new String[newSize];
             for (int i = 0; i < bufferSize; i++) {
                 temp[i] = buffer[i];
             }
-            bufferSize = bufferSize + 50;
+            bufferSize = newSize;
             buffer = temp;
-        }
+            empty.release();
+        } else if (count == bufferSize)
+            return;
+
         try {
             empty.acquire();
             mutex.acquire();
@@ -79,18 +89,26 @@ public class BufferQueuee {
     public long[] stats() {
         long status[] = new long[4];
         status[0] = getbBufferWordsSize();
-        status[1] = bufferSize;
-        status[2] = count;
-        status[3] = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
+        status[1] = count;
+        status[2] = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
         return status;
     }
 
     long getbBufferWordsSize() {
         long totalSize = 0;
-        for (int i = out; i <= count; i = (i + 1) % bufferSize) {
-            long size = buffer[i].length();
+        int outtemp = out;
+        try {
+            mutex.acquire();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        for (int i = 0; i < count; i++) {
+            long size = buffer[outtemp].length();
+            outtemp = (outtemp + 1) % bufferSize;
             totalSize += size;
         }
+        mutex.release();
         return totalSize;
     }
 }
