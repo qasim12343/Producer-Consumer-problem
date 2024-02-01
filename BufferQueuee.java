@@ -87,7 +87,7 @@ public class BufferQueuee {
     }
 
     public long[] stats() {
-        long status[] = new long[4];
+        long status[] = new long[3];
         status[0] = getbBufferWordsSize();
         status[1] = count;
         status[2] = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
